@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>符拉迪沃斯托克 3D 地铁规划系统</title>
+    <script src="cesium/Cesium.js"></script>
+    <link href="cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        #cesiumContainer {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+
+        .control-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            min-width: 250px;
+        }
+
+        .control-panel h3 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            color: #fff;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        .btn {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .btn:hover {
+            background: #0052a3;
+            transform: translateY(-1px);
+        }
+
+        .btn.active {
+            background: #00cc66;
+            box-shadow: 0 0 10px rgba(0, 204, 102, 0.5);
+        }
+
+        .btn-secondary {
+            background: #666;
+        }
+
+        .btn-secondary:hover {
+            background: #555;
+        }
+
+        .btn-danger {
+            background: #cc3333;
+        }
+
+        .btn-danger:hover {
+            background: #aa2222;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .station-info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            max-width: 300px;
+            display: none;
+        }
+
+        .station-info h4 {
+            margin: 0 0 10px 0;
+            color: #00cc66;
+        }
+
+        .station-info p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .station-info .status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        .status-planned {
+            background: #333;
+            color: #fff;
+        }
+
+        .status-under-construction {
+            background: #ff9900;
+            color: #000;
+        }
+
+        .status-operational {
+            background: #00cc66;
+            color: #000;
+        }
+
+        .legend {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+        }
+
+        .legend h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 3px;
+            margin-right: 10px;
+            border-radius: 2px;
+        }
+
+        .metro-line {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .metro-line:hover {
+            width: 8px !important;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .station-entity {
+            cursor: pointer;
+        }
+
+        .station-entity .cesium-htmlLabel {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            transform: translate(-50%, -50%);
+        }
+
+        .building-stats {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 8px;
+            padding: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 12px;
+            z-index: 1000;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 8px;
+            z-index: 2000;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+
+    <div class="control-panel">
+        <h3>🗺️ 城市控制面板</h3>
+
+        <div class="control-group" id="metroGroup">
+            <label>地铁显示模式</label>
+            <button class="btn" id="toggleMetro">显示地铁线路</button>
+            <button class="btn btn-secondary" id="toggleStations">显示站点</button>
+            <button class="btn btn-secondary" id="toggleUnderground">地下模式</button>
+        </div>
+
+        <div class="control-group" id="lineGroup">
+            <label>线路选择</label>
+            <button class="btn" id="line1" style="background: #FF0000;">1号线</button>
+            <button class="btn" id="line2" style="background: #00FF00;">2号线</button>
+            <button class="btn" id="line3" style="background: #0000FF;">3号线</button>
+            <button class="btn btn-secondary" id="showAllLines">显示全部</button>
+        </div>
+
+        <div class="control-group">
+            <label>视角控制</label>
+            <button class="btn btn-secondary" id="resetView">重置视角</button>
+            <button class="btn btn-secondary" id="centerOnPort">港口视角</button>
+            <button class="btn btn-secondary" id="centerOnDvu">大学城视角</button>
+        </div>
+
+        <div class="control-group">
+            <label>地图图层</label>
+            <div class="checkbox-group">
+                <input type="checkbox" id="showBuildings" checked>
+                <label for="showBuildings">建筑</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="showRoads" checked>
+                <label for="showRoads">道路</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="showPOI" checked>
+                <label for="showPOI">设施</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="legend" id="metroLegend">
+        <h4>图例</h4>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #FF0000;"></div>
+            <span>1号线</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #00FF00;"></div>
+            <span>2号线</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #0000FF;"></div>
+            <span>3号线</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #FFD700;"></div>
+            <span>换乘站</span>
+        </div>
+    </div>
+
+    <div class="station-info" id="stationInfo">
+        <h4 id="stationName">站点信息</h4>
+        <p id="stationDetails"></p>
+    </div>
+
+    <div class="building-stats" id="buildingStats">
+        建筑: <span id="buildingCount">0</span>
+    </div>
+
+    <div class="loading" id="loading">
+        加载中...
+    </div>
+
+    <script>
+        // Cesium 初始化（使用免费 OpenStreetMap 底图，无需官方密钥）
+        const viewer = new Cesium.Viewer('cesiumContainer', {
+            selectionIndicator: false,
+            baseLayerPicker: false,
+            geocoder: false,
+            homeButton: false,
+            sceneModePicker: false,
+            navigationHelpButton: false,
+            animation: false,
+            timeline: false,
+            fullscreenButton: false,
+            skyBox: false,
+            shouldAnimate: false,
+            baseLayer: false,
+            terrainProvider: new Cesium.EllipsoidTerrainProvider()
+        });
+
+        // 添加免费 OpenStreetMap 底图（此版本 Cesium 的 baseLayer 参数有兼容问题，构造后手动添加）
+        viewer.imageryLayers.addImageryProvider(new Cesium.UrlTemplateImageryProvider({
+            url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            credit: '© OpenStreetMap contributors',
+            maximumLevel: 19
+        }));
+
+        // 性能: 静态时按需渲染(不动就不烧GPU); 程序改动后需调 pokeRender() 触发一次绘制
+        viewer.scene.requestRenderMode = true;
+        viewer.scene.maximumRenderTimeChange = 2.0;
+        function pokeRender() { viewer.scene.requestRender(); }
+        // 多缓存一些瓦片, 缩放回来不用重新加载
+        viewer.scene.globe.tileCacheSize = 600;
+
+        // 设置初始视角
+        viewer.camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees(131.8875, 43.115, 500),
+            orientation: {
+                heading: Cesium.Math.toRadians(0),
+                pitch: Cesium.Math.toRadians(-30),
+                roll: 0
+            }
+        });
+
+        // 设置地下模式
+        viewer.scene.globe.enableTranslucency = false;
+        viewer.scene.globe.translucency.enabled = false;
+
+        // ===== 功能开关 =====
+        // 地铁层暂时下线(数据与代码保留): 改回 true 即整体恢复
+        const METRO_ENABLED = false;
+        // 酒馆嵌入模式: 地址带 ?embed=1 时隐藏面板, 由 postMessage 驱动角色标记
+        const EMBED_MODE = new URLSearchParams(location.search).has('embed');
+
+        if (!METRO_ENABLED) {
+            ['metroGroup', 'lineGroup', 'metroLegend', 'stationInfo'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.remove();
+            });
+        }
+        if (EMBED_MODE) {
+            const st = document.createElement('style');
+            st.textContent = '.control-panel,.legend,.building-stats{display:none!important}';
+            document.head.appendChild(st);
+            // 公共托管时的数据署名(ODbL 要求可见署名)
+            const cr = document.createElement('div');
+            cr.textContent = '底图 © OpenStreetMap contributors';
+            cr.style.cssText = 'position:absolute;left:6px;bottom:2px;z-index:9;color:rgba(255,255,255,.45);font:10px sans-serif;pointer-events:none;';
+            document.body.appendChild(cr);
+        }
+
+        // 全局变量
+        let metroData = null;
+        let metroEntities = {};
+        let stationEntities = {};
+        let metroLinesVisible = false;
+        let stationsVisible = false;
+        let undergroundMode = false;
+        let selectedLines = new Set(['line1', 'line2', 'line3']);
+
+        // 加载 OSM 数据（支持分包: 同目录有 data-manifest.json 时按清单依次拉分片拼合, 否则走整文件）
+        async function loadOSMData() {
+            try {
+                const mf = await fetch('data-manifest.json', { cache: 'no-cache' });
+                if (mf.ok) {
+                    const manifest = await mf.json();
+                    const shards = manifest.shards || [];
+                    if (shards.length) {
+                        const parts = [];
+                        for (const s of shards) {
+                            const r = await fetch(s);
+                            if (!r.ok) throw new Error('分片 ' + s + ' HTTP ' + r.status);
+                            parts.push(await r.json());
+                        }
+                        const features = [];
+                        for (const p of parts) features.push(...(p.features || []));
+                        return { type: 'FeatureCollection', features: features };
+                    }
+                }
+            } catch (e) {
+                console.warn('分包加载失败, 回退整文件:', e);
+            }
+            const r = await fetch('vladivostok-osm2-semantic.geojson');
+            if (!r.ok) throw new Error('整文件 HTTP ' + r.status);
+            return r.json();
+        }
+        let osmData;
+        let osmLoadFailed = false;
+        loadOSMData()
+            .then(data => {
+                osmData = data;
+                renderOSMLayers();
+                document.getElementById('loading').style.display = 'none';
+                updateBuildingStats();
+            })
+            .catch(error => {
+                console.error('加载 OSM 数据失败:', error);
+                osmLoadFailed = true;
+                document.getElementById('loading').innerHTML = '地图数据加载失败';
+                announceError('data', '地图数据加载失败：' + (error && error.message ? error.message : String(error)));
+            })
+            .finally(() => announceReady());
+
+        // 加载地铁规划数据
+        if (METRO_ENABLED) {
+            fetch('vladivostok-metro-planning.geojson')
+                .then(response => response.json())
+                .then(data => {
+                    metroData = data;
+                    console.log('地铁数据加载成功:', metroData);
+                })
+                .catch(error => {
+                    console.error('加载地铁数据失败:', error);
+                });
+        }
+
+        // 渲染 OSM 图层
+        function renderOSMLayers() {
+            if (!osmData) return;
+
+            // 渲染建筑
+            const buildingEntities = [];
+            osmData.features.forEach(feature => {
+                if (feature.properties.type === 'building') {
+                    const entity = createBuildingEntity(feature);
+                    if (entity) {
+                        buildingEntities.push(entity);
+                    }
+                }
+            });
+
+            // 道路 / 铁路 / 水面绿地 / 兴趣点
+            const roadEntities = [], otherEntities = [];
+            osmData.features.forEach(feature => {
+                const t = feature.properties.type;
+                if (t === 'road') {
+                    const e = createRoadEntity(feature);
+                    if (e) roadEntities.push(e);
+                } else if (t === 'railway') {
+                    const e = createRailwayEntity(feature);
+                    if (e) otherEntities.push(e);
+                } else if (t !== 'building') {
+                    const e = createMapFeatureEntity(feature);
+                    if (e) otherEntities.push(e);
+                }
+            });
+
+            // 大数据量优化: 道路和地物先加, 几万栋建筑分批渐进加入保持页面响应
+            roadEntities.forEach(entity => viewer.entities.add(entity));
+            otherEntities.forEach(entity => viewer.entities.add(entity));
+            let bi = 0;
+            (function addBuildings() {
+                const end = Math.min(bi + 400, buildingEntities.length);
+                for (; bi < end; bi++) viewer.entities.add(buildingEntities[bi]);
+                pokeRender();
+                if (bi < buildingEntities.length) setTimeout(addBuildings, 0);
+            })();
+            updateLod();
+        }
+
+        // 清理坐标：去掉连续重复或过近的点，避免立体挤出时除零崩溃
+        function cleanCoords(coords, minDelta) {
+            const out = [];
+            for (let i = 0; i < coords.length; i++) {
+                const c = coords[i];
+                const last = out[out.length - 1];
+                if (!last || Math.abs(c[0] - last[0]) > minDelta || Math.abs(c[1] - last[1]) > minDelta) {
+                    out.push(c);
+                }
+            }
+            return out;
+        }
+
+        // 创建建筑实体（立体多边形：底部轮廓 + 拉伸高度，比沿轮廓挤圆管更快更稳）
+        function createBuildingEntity(feature) {
+            const coordinates = cleanCoords(feature.geometry.coordinates[0], 1e-7);
+            if (coordinates.length < 3) return null; // 轮廓退化，跳过
+
+            const props = feature.properties;
+            const height = props.height_m || 10;
+            const color = getBuildingColor(props);
+            const isLandmark = props.importance === 'high';
+            const flat = [];
+            for (let i = 0; i < coordinates.length; i++) {
+                flat.push(coordinates[i][0], coordinates[i][1], 0);
+            }
+
+            const entity = {
+                kind: 'building',
+                name: props.name || props.name_zh || '建筑',
+                position: Cesium.Cartesian3.fromDegrees(
+                    coordinates[0][0],
+                    coordinates[0][1],
+                    height / 2
+                ),
+                polygon: {
+                    hierarchy: new Cesium.PolygonHierarchy(
+                        Cesium.Cartesian3.fromDegreesArrayHeights(flat)
+                    ),
+                    height: 0,
+                    extrudedHeight: height,
+                    material: color.withAlpha(0.9),
+                    // 性能关键: 轮廓线会阻止几万栋楼合批绘制, 不画轮廓, 靠颜色/高度对比区分
+                    outline: false,
+                    // LOD: 有名/高楼永远显示, 普通小楼拉近到7公里内才出现
+                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, isLandmark ? 1e7 : 7000)
+                }
+            };
+
+            // 几万栋楼都配标签会拖垮性能, 只给有名建筑配
+            const label = props.name || props.name_zh;
+            if (label) {
+                entity.label = {
+                    text: label,
+                    font: '12px sans-serif',
+                    style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                    outlineWidth: 2,
+                    verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                    heightReference: Cesium.HeightReference.NONE,
+                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 800),
+                    pixelOffset: new Cesium.Cartesian2(0, -10)
+                };
+            }
+            return entity;
+        }
+
+        // 道路按等级做显示距离分级: 小路近看才出现, 主干道永远显示
+        function roadFarDistance(cls) {
+            if (cls === 'service' || cls === 'living_street' || cls === 'pedestrian') return 4000;
+            if (cls === 'residential' || cls === 'unclassified') return 9000;
+            if (cls === 'tertiary' || cls === 'secondary' ||
+                cls === 'tertiary_link' || cls === 'secondary_link') return 15000;
+            return 1e7;
+        }
+
+        // 创建道路实体
+        function createRoadEntity(feature) {
+            const coordinates = cleanCoords(feature.geometry.coordinates, 1e-7);
+            if (coordinates.length < 2) return null;
+
+            // 地形是平的椭球, 不必用昂贵的实时贴地线; 抬高1米避免与地面填充色交错闪烁
+            const positions = coordinates.map(coord =>
+                Cesium.Cartesian3.fromDegrees(coord[0], coord[1], 1)
+            );
+
+            return {
+                kind: 'road',
+                name: feature.properties.name || '道路',
+                lodRank: roadLodRank(feature.properties.roadClass),
+                polyline: {
+                    positions: positions,
+                    width: feature.properties.roadClass === 'primary' ? 8 :
+                           feature.properties.roadClass === 'secondary' ? 6 : 4,
+                    material: getRoadColor(feature.properties),
+                    clampToGround: false,
+                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, roadFarDistance(feature.properties.roadClass))
+                }
+            };
+        }
+
+        // 创建铁路线实体（含地铁/有轨电车, 为地铁主题提供背景参考; 地下隧道段不画）
+        function createRailwayEntity(feature) {
+            if (feature.properties.underground) return null;
+            const coordinates = cleanCoords(feature.geometry.coordinates, 1e-7);
+            if (coordinates.length < 2) return null;
+
+            const positions = coordinates.map(coord =>
+                Cesium.Cartesian3.fromDegrees(coord[0], coord[1], 0)
+            );
+
+            return {
+                kind: 'railway',
+                name: feature.properties.name || '铁路',
+                polyline: {
+                    positions: positions,
+                    width: feature.properties.railClass === 'subway' ? 2 : 3,
+                    material: Cesium.Color.fromCssColorString('#607d8b'),
+                    clampToGround: true
+                }
+            };
+        }
+
+        // 地物配色表: fill=面填充色, dot=点圆点色, labelFar=标签可见距离
+        const MAP_STYLES = {
+            water:         { fill: '#4fc3f7', fillAlpha: 0.55 },
+            pier:          { fill: '#90a4ae', fillAlpha: 0.80 },
+            park:          { fill: '#66bb6a', fillAlpha: 0.30 },
+            forest:        { fill: '#388e3c', fillAlpha: 0.35 },
+            sports:        { fill: '#9ccc65', fillAlpha: 0.30 },
+            square:        { fill: '#cfd8dc', fillAlpha: 0.40 },
+            military_zone: { fill: '#8d6e63', fillAlpha: 0.15 },
+            cemetery:      { fill: '#558b2f', fillAlpha: 0.30 },
+            education:     { fill: '#26a69a', fillAlpha: 0.30, dot: '#26a69a', dotSize: 8 },
+            medical:       { fill: '#ef5350', fillAlpha: 0.30, dot: '#ef5350', dotSize: 9 },
+            commercial:    { fill: '#ec407a', fillAlpha: 0.30, dot: '#ec407a', dotSize: 9 },
+            civic:         { fill: '#7e57c2', fillAlpha: 0.30, dot: '#7e57c2', dotSize: 9 },
+            station:       { fill: '#ffb74d', fillAlpha: 0.40, dot: '#ff9800', dotSize: 14, labelFar: 1500 },
+            transit_stop:  { dot: '#ffca28', dotSize: 7 },
+            landmark:      { fill: '#ffca28', fillAlpha: 0.25, dot: '#ffb300', dotSize: 10 },
+            historic:      { fill: '#a1887f', fillAlpha: 0.25, dot: '#8d6e63', dotSize: 9 },
+            lighthouse:    { dot: '#ffee58', dotSize: 10 },
+            bunker:        { dot: '#5c6bc0', dotSize: 8 },
+            breakwater:    { fill: '#78909c', fillAlpha: 0.50 }
+        };
+
+        // 创建地物实体: 面要素画填充, 点要素画圆点, 有名字才配标签
+        function createMapFeatureEntity(feature) {
+            const style = MAP_STYLES[feature.properties.type];
+            if (!style) return null;
+            const geom = feature.geometry;
+            const name = feature.properties.name || feature.properties.name_zh;
+
+            if (geom.type === 'Point') {
+                if (!style.dot) return null;
+                const e = {
+                    kind: 'facility',
+                    name: name || '设施',
+                    position: Cesium.Cartesian3.fromDegrees(geom.coordinates[0], geom.coordinates[1], 0),
+                    point: {
+                        pixelSize: style.dotSize || 8,
+                        color: Cesium.Color.fromCssColorString(style.dot),
+                        outline: true,
+                        outlineColor: Cesium.Color.WHITE,
+                        outlineWidth: 1.5
+                    }
+                };
+                if (name) {
+                    e.label = {
+                        text: name,
+                        font: '12px sans-serif',
+                        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                        outlineWidth: 2,
+                        verticalOrigin: Cesium.VerticalOrigin.TOP,
+                        heightReference: Cesium.HeightReference.NONE,
+                        pixelOffset: new Cesium.Cartesian2(0, 8),
+                        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, style.labelFar || 600)
+                    };
+                }
+                return e;
+            }
+
+            if (geom.type === 'Polygon' && style.fill) {
+                const ring = cleanCoords(geom.coordinates[0], 1e-7);
+                if (ring.length < 3) return null;
+                const flat = [];
+                for (let i = 0; i < ring.length; i++) flat.push(ring[i][0], ring[i][1], 0);
+                const e = {
+                    kind: 'surface',
+                    name: name || feature.properties.type,
+                    polygon: {
+                        hierarchy: new Cesium.PolygonHierarchy(
+                            Cesium.Cartesian3.fromDegreesArrayHeights(flat)
+                        ),
+                        height: 0,
+                        material: Cesium.Color.fromCssColorString(style.fill).withAlpha(style.fillAlpha)
+                    }
+                };
+                if (name) {
+                    const center = ring.reduce((a, c) => [a[0] + c[0], a[1] + c[1]], [0, 0]);
+                    e.position = Cesium.Cartesian3.fromDegrees(center[0] / ring.length, center[1] / ring.length, 0);
+                    e.label = {
+                        text: name,
+                        font: '12px sans-serif',
+                        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                        outlineWidth: 2,
+                        verticalOrigin: Cesium.VerticalOrigin.CENTER,
+                        heightReference: Cesium.HeightReference.NONE,
+                        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, style.labelFar || 2000)
+                    };
+                }
+                return e;
+            }
+            return null;
+        }
+
+        // 渲染地铁线路
+        function renderMetroLines() {
+            if (!METRO_ENABLED || !metroData) return;
+
+            // 先移除旧的线路/站点实体，避免重复点击时不断堆积
+            Object.values(metroEntities).forEach(e => viewer.entities.remove(e));
+            Object.values(stationEntities).forEach(list => list.forEach(e => viewer.entities.remove(e)));
+
+            metroEntities = {};
+            stationEntities = {};
+
+            // 站点数据用 lines 数组记录所属线路，线路数据用 lineId
+            const lineVisible = (props) =>
+                (props.lines || [props.lineId]).some(id => selectedLines.has(id));
+
+            // 渲染线路
+            metroData.features.forEach(feature => {
+                if (feature.properties.type === 'metro_line') {
+                    const lineEntity = createMetroLineEntity(feature);
+                    if (lineEntity && lineVisible(feature.properties)) {
+                        // add() 返回集合内部真正创建的实体，必须存它才能正确清理
+                        const added = viewer.entities.add(lineEntity);
+                        metroEntities[feature.properties.lineId] = added;
+                    }
+                }
+            });
+
+            // 渲染站点
+            metroData.features.forEach(feature => {
+                if (feature.properties.type === 'metro_station') {
+                    const stationEntity = createMetroStationEntity(feature);
+                    if (stationEntity && lineVisible(feature.properties)) {
+                        const added = viewer.entities.add(stationEntity);
+                        const sid = feature.properties.stationId || feature.properties.name;
+                        if (!stationEntities[sid]) {
+                            stationEntities[sid] = [];
+                        }
+                        stationEntities[sid].push(added);
+                    }
+                }
+            });
+            pokeRender();
+        }
+
+        // 创建地铁线路实体
+        function createMetroLineEntity(feature) {
+            const coordinates = cleanCoords(feature.geometry.coordinates, 1e-7);
+            if (coordinates.length < 2) return null;
+
+            const positions = coordinates.map(coord =>
+                Cesium.Cartesian3.fromDegrees(coord[0], coord[1], -10) // 地下10米
+            );
+
+            const color = Cesium.Color.fromCssColorString(feature.properties.color);
+
+            return {
+                kind: 'metroLine',
+                name: feature.properties.name,
+                polyline: {
+                    positions: positions,
+                    width: 4,
+                    material: color,
+                    clampToGround: false,
+                    show: metroLinesVisible
+                },
+                polylineVolume: {
+                    positions: positions,
+                    shape: computeCircle(3),
+                    material: color.withAlpha(0.3),
+                    outline: false
+                },
+                label: {
+                    text: feature.properties.name,
+                    font: 'bold 14px sans-serif',
+                    style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                    outlineWidth: 2,
+                    verticalOrigin: Cesium.VerticalOrigin.TOP,
+                    heightReference: Cesium.HeightReference.NONE,
+                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 1000),
+                    show: false
+                }
+            };
+        }
+
+        // 创建地铁站点实体
+        function createMetroStationEntity(feature) {
+            const coords = feature.geometry.coordinates;
+            const position = Cesium.Cartesian3.fromDegrees(coords[0], coords[1], -10);
+
+            const color = Cesium.Color.WHITE;
+            const borderColor = Cesium.Color.fromCssColorString(
+                metroData.features.find(f =>
+                    f.properties.type === 'metro_line' &&
+                    f.properties.lineId === feature.properties.lines[0]
+                )?.properties.color || '#FFFFFF'
+            );
+
+            const isTransfer = feature.properties.stationType === 'transfer';
+
+            return {
+                kind: 'metroStation',
+                name: feature.properties.name,
+                position: position,
+                billboard: {
+                    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><circle cx="12" cy="12" r="10" fill="%2300cc66" stroke="white" stroke-width="2"/></svg>',
+                    width: 20,
+                    height: 20,
+                    scaleByDistance: new Cesium.NearFarScalar(1.5e2, 1.0, 1.5e7, 0.2)
+                },
+                label: {
+                    text: feature.properties.name,
+                    font: '12px sans-serif',
+                    style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                    outlineWidth: 2,
+                    verticalOrigin: Cesium.VerticalOrigin.TOP,
+                    heightReference: Cesium.HeightReference.NONE,
+                    distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 300),
+                    show: stationsVisible
+                },
+                stationInfo: feature.properties
+            };
+        }
+
+        // 辅助函数: 建筑按高度分级配色（全城数据下高度比"重要性"更能反映城市形态）
+        function getBuildingColor(properties) {
+            const h = properties.height_m || 0;
+            if (h >= 30) return Cesium.Color.fromCssColorString('#42a5f5');
+            if (h >= 15) return Cesium.Color.fromCssColorString('#90caf9');
+            if (h >= 8) return Cesium.Color.fromCssColorString('#cfd8dc');
+            return Cesium.Color.fromCssColorString('#eceff1');
+        }
+
+        function getRoadColor(properties) {
+            switch (properties.roadClass) {
+                case 'primary':
+                    return Cesium.Color.DARKGRAY;
+                case 'secondary':
+                    return Cesium.Color.GRAY;
+                case 'tertiary':
+                    return Cesium.Color.LIGHTGRAY;
+                default:
+                    return Cesium.Color.WHITE;
+            }
+        }
+
+        function computeCircle(radius) {
+            const positions = [];
+            for (let i = 0; i < 32; i++) {
+                const angle = (i / 32) * 2 * Math.PI;
+                positions.push(new Cesium.Cartesian2(
+                    radius * Math.sin(angle),
+                    radius * Math.cos(angle)
+                ));
+            }
+            positions.push(positions[0]);
+            return positions;
+        }
+
+        // ===== 相机高度分级 LOD: 镜头拉远素材自动降质 =====
+        // tier0 近景(全量) / tier1 中景(隐藏小巷支路) / tier2 远景(只留主干道+地标, 降低瓦片精度)
+        let lodTier = -1;
+
+        function roadLodRank(cls) {
+            if (cls === 'primary' || cls === 'trunk' || cls === 'motorway' ||
+                cls === 'primary_link' || cls === 'trunk_link') return 0;
+            if (cls === 'service' || cls === 'pedestrian' || cls === 'track') return 2;
+            return 1;
+        }
+
+        function applyLodTier(tier) {
+            const roadsOn = document.getElementById('showRoads').checked;
+            viewer.entities.values.forEach(entity => {
+                if (entity.kind === 'road') {
+                    entity.show = roadsOn && (tier === 0 ||
+                        entity.lodRank === 0 || (tier === 1 && entity.lodRank === 1));
+                } else if (entity.kind === 'railway') {
+                    entity.show = roadsOn && tier < 2;
+                }
+            });
+            // 远景放宽瓦片细分精度, 直接降质减负
+            viewer.scene.globe.maximumScreenSpaceError = tier === 2 ? 4 : 2;
+            pokeRender();
+        }
+
+        function updateLod() {
+            const h = viewer.camera.positionCartographic.height;
+            const tier = h > 9500 ? 2 : (h > 3800 ? 1 : 0);
+            if (tier !== lodTier) {
+                lodTier = tier;
+                applyLodTier(tier);
+            }
+        }
+        viewer.camera.percentageChanged = 0.03;
+        viewer.camera.changed.addEventListener(updateLod);
+
+        // 事件监听器
+        if (METRO_ENABLED) {
+        document.getElementById('toggleMetro').addEventListener('click', function() {
+            metroLinesVisible = !metroLinesVisible;
+            this.classList.toggle('active');
+
+            // 首次点击时先生成线路实体
+            if (Object.keys(metroEntities).length === 0) {
+                renderMetroLines();
+            }
+
+            viewer.entities.values.forEach(entity => {
+                if (entity.kind === 'metroLine') {
+                    entity.show = metroLinesVisible;
+                }
+            });
+            pokeRender();
+        });
+
+        document.getElementById('toggleStations').addEventListener('click', function() {
+            stationsVisible = !stationsVisible;
+            this.classList.toggle('active');
+
+            viewer.entities.values.forEach(entity => {
+                if (entity.kind === 'metroStation') {
+                    entity.label.show = stationsVisible;
+                }
+            });
+            pokeRender();
+        });
+
+        document.getElementById('toggleUnderground').addEventListener('click', function() {
+            toggleUndergroundMode(this);
+        });
+
+        function toggleUndergroundMode(button) {
+            undergroundMode = !undergroundMode;
+            button.classList.toggle('active');
+
+            if (undergroundMode) {
+                // 启用地下模式：地球变半透明并隐藏地表建筑，露出地下地铁线路
+                viewer.scene.globe.translucency.enabled = true;
+                viewer.scene.globe.translucency.frontFaceAlpha = 0.15;
+                viewer.scene.globe.translucency.backFaceAlpha = 0.15;
+
+                viewer.entities.values.forEach(entity => {
+                    if (entity.kind === 'building') {
+                        entity.show = false;
+                    }
+                });
+            } else {
+                // 关闭地下模式：恢复地球，建筑显示状态尊重图层开关
+                viewer.scene.globe.translucency.enabled = false;
+
+                const buildingsShown = document.getElementById('showBuildings').checked;
+                viewer.entities.values.forEach(entity => {
+                    if (entity.kind === 'building') {
+                        entity.show = buildingsShown;
+                    }
+                });
+            }
+            pokeRender();
+        }
+        } // METRO_ENABLED 开关结束
+
+        // 线路选择（地铁层下线时不注册）
+        if (METRO_ENABLED) ['line1', 'line2', 'line3'].forEach(lineId => {
+            document.getElementById(lineId).addEventListener('click', function() {
+                selectedLines.clear();
+                selectedLines.add(lineId);
+                this.classList.add('active');
+
+                // 重置其他按钮
+                ['line1', 'line2', 'line3'].forEach(id => {
+                    if (id !== lineId) {
+                        document.getElementById(id).classList.remove('active');
+                    }
+                });
+
+                renderMetroLines();
+            });
+        });
+
+        if (METRO_ENABLED) document.getElementById('showAllLines').addEventListener('click', function() {
+            selectedLines = new Set(['line1', 'line2', 'line3']);
+
+            // 重置所有按钮
+            ['line1', 'line2', 'line3'].forEach(id => {
+                document.getElementById(id).classList.add('active');
+            });
+
+            renderMetroLines();
+        });
+
+        // 视角控制
+        document.getElementById('resetView').addEventListener('click', function() {
+            viewer.camera.setView({
+                destination: Cesium.Cartesian3.fromDegrees(131.8875, 43.115, 500),
+                orientation: {
+                    heading: Cesium.Math.toRadians(0),
+                    pitch: Cesium.Math.toRadians(-30),
+                    roll: 0
+                }
+            });
+        });
+
+        document.getElementById('centerOnPort').addEventListener('click', function() {
+            viewer.camera.setView({
+                destination: Cesium.Cartesian3.fromDegrees(131.8750, 43.1100, 100),
+                orientation: {
+                    heading: Cesium.Math.toRadians(0),
+                    pitch: Cesium.Math.toRadians(-45),
+                    roll: 0
+                }
+            });
+        });
+
+        document.getElementById('centerOnDvu').addEventListener('click', function() {
+            viewer.camera.setView({
+                destination: Cesium.Cartesian3.fromDegrees(131.9100, 43.1150, 100),
+                orientation: {
+                    heading: Cesium.Math.toRadians(180),
+                    pitch: Cesium.Math.toRadians(-45),
+                    roll: 0
+                }
+            });
+        });
+
+        // 图层控制
+        document.getElementById('showBuildings').addEventListener('change', function() {
+            const show = this.checked;
+            viewer.entities.values.forEach(entity => {
+                if (entity.kind === 'building') {
+                    entity.show = show;
+                }
+            });
+            pokeRender();
+        });
+
+        document.getElementById('showRoads').addEventListener('change', function() {
+            const show = this.checked;
+            viewer.entities.values.forEach(entity => {
+                if (entity.kind === 'road' || entity.kind === 'railway') {
+                    entity.show = show;
+                }
+            });
+            pokeRender();
+        });
+
+        document.getElementById('showPOI').addEventListener('change', function() {
+            const show = this.checked;
+            viewer.entities.values.forEach(entity => {
+                if (entity.kind === 'facility' || entity.kind === 'surface') {
+                    entity.show = show;
+                }
+            });
+            pokeRender();
+        });
+
+        // 站点点击事件
+        const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+        handler.setInputAction(function(click) {
+            const pickedObject = viewer.scene.pick(click.position);
+            if (pickedObject && pickedObject.entity && pickedObject.entity.stationInfo) {
+                showStationInfo(pickedObject.entity.stationInfo);
+            }
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+        // 显示站点信息
+        function showStationInfo(info) {
+            const stationInfo = document.getElementById('stationInfo');
+            if (!stationInfo) return; // 地铁层下线时信息框已移除
+            const stationName = document.getElementById('stationName');
+            const stationDetails = document.getElementById('stationDetails');
+
+            stationName.textContent = info.name;
+
+            const statusClass = `status-${info.status}`;
+            const lines = info.lines.join(', ');
+
+            stationDetails.innerHTML = `
+                <p><span class="status ${statusClass}">${info.status_zh}</span></p>
+                <p>类型: ${info.stationType_zh}</p>
+                <p>线路: ${lines}</p>
+                <p>规划年份: ${info.plannedYear}</p>
+            `;
+
+            stationInfo.style.display = 'block';
+        }
+
+        // 更新建筑统计
+        function updateBuildingStats() {
+            let buildingCount = 0;
+            osmData.features.forEach(feature => {
+                if (feature.properties.type === 'building') {
+                    buildingCount++;
+                }
+            });
+            document.getElementById('buildingCount').textContent = buildingCount;
+        }
+
+        // 键盘控制
+        document.addEventListener('keydown', function(event) {
+            switch(event.key) {
+                case 'w':
+                case 'W':
+                    moveCamera('forward');
+                    break;
+                case 's':
+                case 'S':
+                    moveCamera('backward');
+                    break;
+                case 'a':
+                case 'A':
+                    moveCamera('left');
+                    break;
+                case 'd':
+                case 'D':
+                    moveCamera('right');
+                    break;
+            }
+        });
+
+        function moveCamera(direction) {
+            const movement = 50;
+            const cartographic = viewer.camera.positionCartographic;
+
+            switch(direction) {
+                case 'forward':
+                    viewer.camera.moveForward(movement);
+                    break;
+                case 'backward':
+                    viewer.camera.moveBackward(movement);
+                    break;
+                case 'left':
+                    viewer.camera.moveLeft(movement);
+                    break;
+                case 'right':
+                    viewer.camera.moveRight(movement);
+                    break;
+            }
+        }
+
+        // ===== 酒馆联动层: 角色位置标记 + postMessage 桥 =====
+        // 协议(消息 type 均带 tw: 前缀):
+        //   收 tw:setCharacters {list:[{id,name,lon,lat,color?}]}  设置/更新/移除角色标记
+        //   收 tw:flyTo        {lon,lat,height?,duration?}         飞到指定坐标
+        //   收 tw:getCamera    {}                                  回发 tw:camera 当前相机状态
+        //   发 tw:ready        加载完成通告(含版本)
+        //   发 tw:pick         {lon,lat}                           用户点击地图取坐标(供变量写回)
+        // 同源调用可直接用 window.VladMap API, 不必走 postMessage。
+
+        const charMarkers = new Map();   // id -> 实体
+
+        function setCharacters(list) {
+            (list || []).forEach(c => {
+                if (!c || c.id === undefined || !isFinite(c.lon) || !isFinite(c.lat)) return;
+                const pos = Cesium.Cartesian3.fromDegrees(c.lon, c.lat, 2);
+                const isPlayer = !!c.isPlayer;
+                let m = charMarkers.get(c.id);
+                if (m && !!m.isPlayerFlag !== isPlayer) {   // 玩家身份变化: 重建标记
+                    viewer.entities.remove(m);
+                    charMarkers.delete(c.id);
+                    m = null;
+                }
+                if (!m) {
+                    m = viewer.entities.add({
+                        kind: 'character',
+                        name: c.name || String(c.id),
+                        position: pos,
+                        isPlayerFlag: isPlayer,
+                        point: {
+                            pixelSize: isPlayer ? 18 : 14,
+                            color: Cesium.Color.fromCssColorString(c.color || (isPlayer ? '#00e676' : '#ff4081')),
+                            outline: true,
+                            outlineColor: Cesium.Color.WHITE,
+                            outlineWidth: isPlayer ? 3 : 2,
+                            disableDepthTestDistance: Number.POSITIVE_INFINITY
+                        },
+                        label: {
+                            text: isPlayer ? ((c.name || String(c.id)) + '（你）') : (c.name || String(c.id)),
+                            font: 'bold 13px sans-serif',
+                            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                            outlineWidth: 2,
+                            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                            pixelOffset: new Cesium.Cartesian2(0, -10),
+                            distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 5e6),
+                            disableDepthTestDistance: Number.POSITIVE_INFINITY
+                        }
+                    });
+                    charMarkers.set(c.id, m);
+                } else {
+                    m.position = pos;
+                    if (c.name) { m.name = c.name; m.label.text = isPlayer ? (c.name + '（你）') : c.name; }
+                    if (c.color) m.point.color = Cesium.Color.fromCssColorString(c.color);
+                }
+            });
+            const ids = new Set((list || []).map(c => c && c.id).filter(id => id !== undefined));
+            charMarkers.forEach((m, id) => {
+                if (!ids.has(id)) { viewer.entities.remove(m); charMarkers.delete(id); }
+            });
+            pokeRender();
+        }
+
+        function flyToPos(lon, lat, height, duration) {
+            viewer.camera.flyTo({
+                destination: Cesium.Cartesian3.fromDegrees(lon, lat, height || 1500),
+                duration: duration || 2
+            });
+        }
+
+        function getCameraState() {
+            const c = viewer.camera.positionCartographic;
+            return {
+                lon: +Cesium.Math.toDegrees(c.longitude).toFixed(6),
+                lat: +Cesium.Math.toDegrees(c.latitude).toFixed(6),
+                height: Math.round(c.height),
+                heading: Math.round(Cesium.Math.toDegrees(viewer.camera.heading)),
+                pitch: Math.round(Cesium.Math.toDegrees(viewer.camera.pitch))
+            };
+        }
+
+        // ---- 地名基线查询（只读）------------------------------------------------
+        // 地图数据层自带一套客观标签(道路/车站/港口等)。它不完整, 也可能与玩家
+        // 输入冲突。这里只回答"地图上有没有这个名字、它在哪", 不做判断、不改数据。
+        // 缺失的名字返回空结果, 由上层决定把它当参考还是待定位。
+        let placeIndex = null;
+        function placeFeatureCoord(f) {
+            const g = f && f.geometry;
+            const co = g && g.coordinates;
+            if (!co || !co.length) return null;
+            try {
+                if (g.type === 'Point') return [co[0], co[1]];
+                if (g.type === 'LineString') {
+                    const m = co[Math.floor(co.length / 2)];
+                    return [m[0], m[1]];
+                }
+                if (g.type === 'Polygon') {
+                    const ring = co[0];
+                    let x = 0, y = 0;
+                    for (let i = 0; i < ring.length; i++) { x += ring[i][0]; y += ring[i][1]; }
+                    return [x / ring.length, y / ring.length];
+                }
+            } catch (e) { /* 坏几何直接跳过 */ }
+            return null;
+        }
+        function getPlaceIndex() {
+            if (placeIndex) return placeIndex;
+            placeIndex = new Map();
+            if (!osmData || !Array.isArray(osmData.features)) return placeIndex;
+            for (const f of osmData.features) {
+                const p = (f && f.properties) || {};
+                const raw = p.name || p.name_zh;
+                if (!raw) continue;
+                const key = String(raw).trim();
+                if (!key || placeIndex.has(key)) continue;   // 同名先到先得, 不覆盖
+                const c = placeFeatureCoord(f);
+                if (!c) continue;
+                placeIndex.set(key, {
+                    name: key, lon: +c[0], lat: +c[1],
+                    type: p.type || '', detail: p.detail || ''
+                });
+            }
+            return placeIndex;
+        }
+        function findPlace(q, limit) {
+            const key = String(q == null ? '' : q).trim();
+            const res = { query: key, matches: [], dataReady: !!osmData };
+            if (!key || !osmData) return res;
+            const idx = getPlaceIndex();
+            const exact = idx.get(key);
+            if (exact) res.matches.push(exact);
+            const lim = Math.max(1, Math.min(20, limit || 5));
+            for (const v of idx.values()) {
+                if (res.matches.length >= lim) break;
+                if (v.name === key) continue;
+                if (v.name.indexOf(key) >= 0 || key.indexOf(v.name) >= 0) res.matches.push(v);
+            }
+            return res;
+        }
+
+        // postMessage 桥（跨端口 iframe 场景由酒馆侧桥接脚本转发变量）
+        window.addEventListener('message', (ev) => {
+            const d = ev.data;
+            if (!d || typeof d !== 'object' || !String(d.type).startsWith('tw:')) return;
+            try {
+                switch (d.type) {
+                    case 'tw:setCharacters': setCharacters(d.list); break;
+                    case 'tw:flyTo': flyToPos(d.lon, d.lat, d.height, d.duration); break;
+                    case 'tw:hello': announceReady(true); break; // 桥后启动时主动敲门, 补发 ready
+                    case 'tw:resize': viewer.resize(); pokeRender(); break; // 外层面板重新显示时重算画布尺寸
+                    case 'tw:getCamera':
+                        window.parent.postMessage(
+                            Object.assign({ type: 'tw:camera', rid: d.rid }, getCameraState()),
+                            '*');
+                        break;
+                    case 'tw:findPlace':
+                        window.parent.postMessage(
+                            Object.assign({ type: 'tw:place', rid: d.rid }, findPlace(d.q, d.limit)),
+                            '*');
+                        break;
+                }
+            } catch (e) { console.error('tw: 消息处理失败', e); }
+        });
+
+        // 点击地图取坐标（供酒馆侧写回角色位置变量）
+        new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas)
+            .setInputAction(function(click) {
+                const ray = viewer.camera.getPickRay(click.position);
+                const cart = ray && viewer.scene.globe.pick(ray, viewer.scene);
+                if (!cart) return;
+                const c = Cesium.Cartographic.fromCartesian(cart);
+                const msg = Object.assign({ type: 'tw:pick' }, {
+                    lon: +Cesium.Math.toDegrees(c.longitude).toFixed(6),
+                    lat: +Cesium.Math.toDegrees(c.latitude).toFixed(6)
+                });
+                window.postMessage(msg, '*');
+                if (window.parent !== window) window.parent.postMessage(msg, '*');
+            }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+        // 加载完成通告(force=true 时重发, 供晚启动的桥补握)
+        let readyAnnounced = false;
+        function announceReady(force) {
+            if (readyAnnounced && !force) return;
+            readyAnnounced = true;
+            const msg = {
+                type: 'tw:ready', version: '1.2', embed: EMBED_MODE,
+                metro: METRO_ENABLED, ok: !osmLoadFailed
+            };
+            if (window.parent !== window) window.parent.postMessage(msg, '*');
+            console.log('地图就绪', msg);
+        }
+
+        // 加载失败通告: 让外层悬浮窗能显示可读错误, 而不是静默空白
+        function announceError(stage, message) {
+            const msg = { type: 'tw:error', version: '1.2', stage: stage, message: message };
+            if (window.parent !== window) window.parent.postMessage(msg, '*');
+            console.error('地图错误', msg);
+        }
+
+        // 同源直调 API
+        window.VladMap = {
+            setCharacters: setCharacters,
+            flyTo: flyToPos,
+            getCamera: getCameraState,
+            getCharacters: function() {
+                const arr = [];
+                charMarkers.forEach(function(m, id) {
+                    arr.push({ id: id, name: m.name, isPlayer: !!m.isPlayerFlag });
+                });
+                return arr;
+            },
+            findPlace: findPlace,
+            version: '1.2'
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,602 @@
+{
+  "type": "FeatureCollection",
+  "name": "符拉迪沃斯托克地铁规划",
+  "version": "1.0",
+  "metadata": {
+    "source": "人工规划数据",
+    "license": "CC BY-SA",
+    "bbox": [
+      131.87,
+      43.1,
+      131.92,
+      43.125
+    ],
+    "note": "基于现有地图布局的地铁规划方案",
+    "lines": 3,
+    "stations": 17,
+    "transfer_stations": 2
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "1号线（南北主干线）",
+        "type": "metro_line",
+        "gameType": "planned_metro_line",
+        "lineId": "line1",
+        "status": "planned",
+        "status_zh": "规划中",
+        "color": "#FF0000",
+        "description": "连接金角湾港口、市中心和俄罗斯岛大学城",
+        "plannedYear": 2030,
+        "stations": 7,
+        "importance": "high"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            131.875,
+            43.11
+          ],
+          [
+            131.885,
+            43.112
+          ],
+          [
+            131.89,
+            43.115
+          ],
+          [
+            131.895,
+            43.118
+          ],
+          [
+            131.9,
+            43.121
+          ],
+          [
+            131.905,
+            43.119
+          ],
+          [
+            131.91,
+            43.115
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "2号线（东西环线）",
+        "type": "metro_line",
+        "gameType": "planned_metro_line",
+        "lineId": "line2",
+        "status": "planned",
+        "status_zh": "规划中",
+        "color": "#00FF00",
+        "description": "环绕市中心连接主要商业区和住宅区",
+        "plannedYear": 2032,
+        "stations": 8,
+        "importance": "high"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            131.87,
+            43.108
+          ],
+          [
+            131.875,
+            43.11
+          ],
+          [
+            131.885,
+            43.112
+          ],
+          [
+            131.895,
+            43.114
+          ],
+          [
+            131.905,
+            43.116
+          ],
+          [
+            131.915,
+            43.118
+          ],
+          [
+            131.92,
+            43.12
+          ],
+          [
+            131.91,
+            43.125
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "3号线（机场支线）",
+        "type": "metro_line",
+        "gameType": "planned_metro_line",
+        "lineId": "line3",
+        "status": "planned",
+        "status_zh": "规划中",
+        "color": "#0000FF",
+        "description": "从市中心直达金角湾机场",
+        "plannedYear": 2035,
+        "stations": 4,
+        "importance": "high"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            131.885,
+            43.112
+          ],
+          [
+            131.89,
+            43.108
+          ],
+          [
+            131.895,
+            43.104
+          ],
+          [
+            131.9,
+            43.1
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "港口站",
+        "type": "metro_station",
+        "gameType": "planned_metro_station",
+        "stationId": "line1_3",
+        "lines": [
+          "line1"
+        ],
+        "status": "planned",
+        "status_zh": "规划中",
+        "stationType": "terminal",
+        "stationType_zh": "终点站",
+        "plannedYear": 2030,
+        "unlocked": false,
+        "importance": "medium"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.875,
+          43.11
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "中心广场站",
+        "type": "metro_station",
+        "gameType": "planned_metro_station",
+        "stationId": "line1_3",
+        "lines": [
+          "line1"
+        ],
+        "status": "planned",
+        "status_zh": "规划中",
+        "stationType": "transfer",
+        "stationType_zh": "换乘站",
+        "plannedYear": 2030,
+        "unlocked": false,
+        "importance": "high"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.885,
+          43.112
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "火车站",
+        "type": "metro_station",
+        "gameType": "planned_metro_station",
+        "stationId": "line1_3",
+        "lines": [
+          "line1"
+        ],
+        "status": "planned",
+        "status_zh": "规划中",
+        "stationType": "transfer",
+        "stationType_zh": "换乘站",
+        "plannedYear": 2030,
+        "unlocked": false,
+        "importance": "high"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.89,
+          43.115
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "金角湾站",
+        "type": "metro_station",
+        "gameType": "planned_metro_station",
+        "stationId": "line1_3",
+        "lines": [
+          "line1"
+        ],
+        "status": "planned",
+        "status_zh": "规划中",
+        "stationType": "normal",
+        "stationType_zh": "普通站",
+        "plannedYear": 2030,
+        "unlocked": false,
+        "importance": "medium"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.895,
+          43.118
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "体育场站",
+        "type": "metro_station",
+        "gameType": "planned_metro_station",
+        "stationId": "line1_3",
+        "lines": [
+          "line1"
+        ],
+        "status": "planned",
+        "status_zh": "规划中",
+        "stationType": "normal",
+        "stationType_zh": "普通站",
+        "plannedYear": 2030,
+        "unlocked": false,
+        "importance": "medium"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.9,
+          43.121
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "海洋大学站",
+        "type": "metro_station",
+        "gameType": "planned_metro_station",
+        "stationId": "line1_3",
+        "lines": [
+          "line1"
+        ],
+        "status": "planned",
+        "status_zh": "规划中",
+        "stationType": "normal",
+        "stationType_zh": "普通站",
+        "plannedYear": 2030,
+        "unlocked": false,
+        "importance": "medium"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.905,
+          43.119
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "俄罗斯岛站",
+        "type": "metro_station",
+        "gameType": "planned_metro_station",
+        "stationId": "line1_3",
+        "lines": [
+          "line1"
+        ],
+        "status": "planned",
+        "status_zh": "规划中",
+        "stationType": "terminal",
+        "stationType_zh": "终点站",
+        "plannedYear": 2030,
+        "unlocked": false,
+        "importance": "medium"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.91,
+          43.115
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "西港站",
+        "type": "metro_station",
+        "gameType": "planned_metro_station",
+        "stationId": "line2_3",
+        "lines": [
+          "line2"
+        ],
+        "status": "planned",
+        "status_zh": "规划中",
+        "stationType": "normal",
+        "stationType_zh": "普通站",
+        "plannedYear": 2032,
+        "unlocked": false,
+        "importance": "medium"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.87,
+          43.108
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "海军广场站",
+        "type": "metro_station",
+        "gameType": "planned_metro_station",
+        "stationId": "line2_3",
+        "lines": [
+          "line2"
+        ],
+        "status": "planned",
+        "status_zh": "规划中",
+        "stationType": "normal",
+        "stationType_zh": "普通站",
+        "plannedYear": 2032,
+        "unlocked": false,
+        "importance": "medium"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.875,
+          43.11
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "商业中心站",
+        "type": "metro_station",
+        "gameType": "planned_metro_station",
+        "stationId": "line2_3",
+        "lines": [
+          "line2"
+        ],
+        "status": "planned",
+        "status_zh": "规划中",
+        "stationType": "normal",
+        "stationType_zh": "普通站",
+        "plannedYear": 2032,
+        "unlocked": false,
+        "importance": "medium"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.895,
+          43.114
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "文化宫站",
+        "type": "metro_station",
+        "gameType": "planned_metro_station",
+        "stationId": "line2_3",
+        "lines": [
+          "line2"
+        ],
+        "status": "planned",
+        "status_zh": "规划中",
+        "stationType": "normal",
+        "stationType_zh": "普通站",
+        "plannedYear": 2032,
+        "unlocked": false,
+        "importance": "medium"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.905,
+          43.116
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "新区站",
+        "type": "metro_station",
+        "gameType": "planned_metro_station",
+        "stationId": "line2_3",
+        "lines": [
+          "line2"
+        ],
+        "status": "planned",
+        "status_zh": "规划中",
+        "stationType": "normal",
+        "stationType_zh": "普通站",
+        "plannedYear": 2032,
+        "unlocked": false,
+        "importance": "medium"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.915,
+          43.118
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "山景站",
+        "type": "metro_station",
+        "gameType": "planned_metro_station",
+        "stationId": "line2_3",
+        "lines": [
+          "line2"
+        ],
+        "status": "planned",
+        "status_zh": "规划中",
+        "stationType": "normal",
+        "stationType_zh": "普通站",
+        "plannedYear": 2032,
+        "unlocked": false,
+        "importance": "medium"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.92,
+          43.12
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "滨海站",
+        "type": "metro_station",
+        "gameType": "planned_metro_station",
+        "stationId": "line2_3",
+        "lines": [
+          "line2"
+        ],
+        "status": "planned",
+        "status_zh": "规划中",
+        "stationType": "terminal",
+        "stationType_zh": "终点站",
+        "plannedYear": 2032,
+        "unlocked": false,
+        "importance": "medium"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.91,
+          43.125
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "科技园站",
+        "type": "metro_station",
+        "gameType": "planned_metro_station",
+        "stationId": "line3_3",
+        "lines": [
+          "line3"
+        ],
+        "status": "planned",
+        "status_zh": "规划中",
+        "stationType": "normal",
+        "stationType_zh": "普通站",
+        "plannedYear": 2035,
+        "unlocked": false,
+        "importance": "medium"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.89,
+          43.108
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "会展中心站",
+        "type": "metro_station",
+        "gameType": "planned_metro_station",
+        "stationId": "line3_3",
+        "lines": [
+          "line3"
+        ],
+        "status": "planned",
+        "status_zh": "规划中",
+        "stationType": "normal",
+        "stationType_zh": "普通站",
+        "plannedYear": 2035,
+        "unlocked": false,
+        "importance": "medium"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.895,
+          43.104
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "机场站",
+        "type": "metro_station",
+        "gameType": "planned_metro_station",
+        "stationId": "line3_3",
+        "lines": [
+          "line3"
+        ],
+        "status": "planned",
+        "status_zh": "规划中",
+        "stationType": "terminal",
+        "stationType_zh": "终点站",
+        "plannedYear": 2035,
+        "unlocked": false,
+        "importance": "medium"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.9,
+          43.1
+        ]
+      }
+    }
+  ]
+}

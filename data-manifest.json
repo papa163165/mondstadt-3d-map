@@ -1,0 +1,10 @@
+{
+ "version": 1,
+ "shards": [
+  "data-1.json",
+  "data-2.json",
+  "data-3.json",
+  "data-4.json"
+ ],
+ "totalFeatures": 83811
+}

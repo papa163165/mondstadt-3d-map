@@ -1,0 +1,8 @@
+# CDN artifact repo: keep every file byte-exact, no EOL or encoding rewriting.
+* -text
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.wasm binary
+*.zip binary
