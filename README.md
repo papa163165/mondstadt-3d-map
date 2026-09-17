@@ -120,7 +120,7 @@ window.__MONDSTADT_MAP_CONFIG__ = { readyTimeoutMs: 120000 };
 
 ## 索引页（index.html）
 
-相对原始 `vladivostok-metro-3d.html` 只做了四处改动，都是为了让外层面板能正确显示状态与正确装载：
+相对原始 `vladivostok-metro-3d.html` 只做了五处改动，都是为了让外层面板能正确显示状态与正确装载：
 
 1. 新增 `announceError(stage, message)`，加载失败时向父窗口发 `tw:error`。
 2. `tw:ready` 增加 `ok` 字段，数据加载失败时为 `false`；版本号升到 `1.3`。
