@@ -31,7 +31,7 @@
     /* ===================== 2. config ===================== */
 
     var CONFIG = {
-        version: '1',
+        version: '2',
         cdnBase: 'https://cdn.jsdelivr.net/gh/papa163165/mondstadt-3d-map@main/',
         mapFile: 'index.html',
         easyQuery: 'embed=1',
@@ -62,6 +62,8 @@
     var readyTimer = null;
     var frame = null;
     var frameToken = 0;
+    var blobUrl = null;
+    var mapDocUrl = null;
     var lastPick = null;
     var overlayMode = 'idle';
     var ballEl = null;
@@ -428,6 +430,73 @@
 
     /* ===================== 9. iframe ===================== */
 
+    // jsDelivr / statically.io 这类 CDN 出于防钓鱼策略，会把 .html 按 text/plain 下发，
+    // 浏览器拿到后只会把源码当纯文本显示，不会解析成页面。所以不能直接给 iframe 指 URL。
+    // 做法：把 index.html 取回来，补一个 <base href="CDN 根"> 让相对路径仍指向 CDN，
+    // 再用 Blob URL 塞进 iframe（Blob 不经过 CDN 的内容类型判定）。
+    function jsString(s) {
+        return JSON.stringify(String(s))
+            .replace(/</g, '\\u003c')
+            .replace(/\u2028/g, '\\u2028')
+            .replace(/\u2029/g, '\\u2029');
+    }
+
+    function baseOf(url) {
+        return url.replace(/[?#][\s\S]*$/, '').replace(/[^/]*$/, '');
+    }
+
+    function queryOf(url) {
+        var i = url.indexOf('?');
+        if (i < 0) return '';
+        var q = url.slice(i);
+        var h = q.indexOf('#');
+        return h < 0 ? q : q.slice(0, h);
+    }
+
+    function buildMapDocument(html, base, query) {
+        var inject = '<base href="' + String(base).replace(/"/g, '%22') + '">' +
+            '<script>window.__MDSK_EMBED__=true;window.__MDSK_PARAMS__=' + jsString(query) + ';<\/script>';
+        var m = /<head[^>]*>/i.exec(html);
+        if (m) {
+            var at = m.index + m[0].length;
+            return html.slice(0, at) + inject + html.slice(at);
+        }
+        return inject + html;
+    }
+
+    function loadMapDocument(frameEl, url, token) {
+        var f = null;
+        try { f = HOST.fetch || window.fetch; } catch (e) { f = null; }
+        if (!f) {
+            setOverlay('error', '\u65E0\u6CD5\u52A0\u8F7D\u5730\u56FE', '\u5F53\u524D\u73AF\u5883\u7F3A\u5C11 fetch\uFF0C\u65E0\u6CD5\u53D6\u56DE\u5730\u56FE\u9875\u3002');
+            setStatus('\u9519\u8BEF');
+            setBallState('error');
+            return;
+        }
+        f(url, { cache: 'no-store' }).then(function (r) {
+            if (token !== frameToken) return null;
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.text();
+        }).then(function (html) {
+            if (token !== frameToken || html == null) return;
+            var docHtml = buildMapDocument(html, baseOf(url), queryOf(url));
+            var blob = new HOST.Blob([docHtml], { type: 'text/html' });
+            blobUrl = HOST.URL.createObjectURL(blob);
+            mapDocUrl = url;
+            if (token !== frameToken) return;
+            frameEl.src = blobUrl;
+        }).catch(function (err) {
+            if (token !== frameToken) return;
+            setOverlay('error', '\u65E0\u6CD5\u52A0\u8F7D\u5730\u56FE\u9875',
+                '\u8BF7\u6C42 ' + url + ' \u5931\u8D25\uFF1A' + ((err && err.message) || err) +
+                '\u3002\u82E5\u6307\u5411\u672C\u673A\u670D\u52A1\u5668\uFF0C\u8BF7\u786E\u8BA4\u5B83\u4F1A\u8FD4\u56DE ' +
+                'Access-Control-Allow-Origin \u54CD\u5E94\u5934\uFF08jsDelivr \u672C\u8EAB\u662F\u5141\u8BB8\u7684\uFF09\u3002');
+            setStatus('\u9519\u8BEF');
+            setBallState('error');
+            fire('mdsk:error', { stage: 'document', message: String((err && err.message) || err), url: url });
+        });
+    }
+
     function ensureFrame() {
         if (frame && frame.parentNode) return frame;
         var url = getMapUrl();
@@ -440,7 +509,6 @@
         frame.setAttribute('title', '\u8499\u5FB7\u65AF\u79D1 3D \u5730\u56FE');
         frame.setAttribute('allow', 'fullscreen; clipboard-write');
         frame.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
-        frame.src = url;
 
         frame.addEventListener('load', function () {
             if (token !== frameToken || mapReady) return;
@@ -451,12 +519,19 @@
 
         stageEl.appendChild(frame);
         startLoadWatch(url, token);
+        loadMapDocument(frame, url, token);
         return frame;
     }
 
     function destroyFrame() {
-        if (!frame) return;
-        try { frame.parentNode && frame.parentNode.removeChild(frame); } catch (e) { /* ignore */ }
+        if (frame) {
+            try { frame.parentNode && frame.parentNode.removeChild(frame); } catch (e) { /* ignore */ }
+        }
+        if (blobUrl) {
+            try { HOST.URL.revokeObjectURL(blobUrl); } catch (e2) { /* ignore */ }
+            blobUrl = null;
+        }
+        mapDocUrl = null;
         frame = null;
         frameToken += 1;
     }
@@ -686,6 +761,8 @@
                     frameIsDomNode: frame != null && frame === domFrame,
                     frameSrc: frame ? frame.getAttribute('src') : null,
                     domFrameSrc: domFrame ? domFrame.getAttribute('src') : null,
+                    mapDocUrl: mapDocUrl,
+                    blobUrl: blobUrl,
                     iframeCount: doc.querySelectorAll('iframe').length,
                     panelOpen: panelOpen,
                     mapReady: mapReady,

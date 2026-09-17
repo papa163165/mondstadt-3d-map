@@ -361,7 +361,11 @@
         // 地铁层暂时下线(数据与代码保留): 改回 true 即整体恢复
         const METRO_ENABLED = false;
         // 酒馆嵌入模式: 地址带 ?embed=1 时隐藏面板, 由 postMessage 驱动角色标记
-        const EMBED_MODE = new URLSearchParams(location.search).has('embed');
+        // 悬浮窗外层把本页放进 iframe 时用的是 Blob URL，location.search 会丢失，
+        // 因此除地址参数外还接受注入的标记，并把「处在 iframe 里」本身也当嵌入模式。
+        const EMBED_MODE = new URLSearchParams(location.search).has('embed')
+            || window.__MDSK_EMBED__ === true
+            || window.parent !== window;
 
         if (!METRO_ENABLED) {
             ['metroGroup', 'lineGroup', 'metroLegend', 'stationInfo'].forEach(id => {
@@ -1325,7 +1329,7 @@
             if (readyAnnounced && !force) return;
             readyAnnounced = true;
             const msg = {
-                type: 'tw:ready', version: '1.2', embed: EMBED_MODE,
+                type: 'tw:ready', version: '1.3', embed: EMBED_MODE,
                 metro: METRO_ENABLED, ok: !osmLoadFailed
             };
             if (window.parent !== window) window.parent.postMessage(msg, '*');
@@ -1334,7 +1338,7 @@
 
         // 加载失败通告: 让外层悬浮窗能显示可读错误, 而不是静默空白
         function announceError(stage, message) {
-            const msg = { type: 'tw:error', version: '1.2', stage: stage, message: message };
+            const msg = { type: 'tw:error', version: '1.3', stage: stage, message: message };
             if (window.parent !== window) window.parent.postMessage(msg, '*');
             console.error('地图错误', msg);
         }
@@ -1352,7 +1356,7 @@
                 return arr;
             },
             findPlace: findPlace,
-            version: '1.2'
+            version: '1.3'
         };
     </script>
 </body>
