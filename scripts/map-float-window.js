@@ -30,9 +30,33 @@
 
     /* ===================== 2. config ===================== */
 
+    /* Resolve this script's own CDN base so the map page always ships from the
+     * same ref (tag/SHA/branch) the loader was pinned to. A hardcoded ref here
+     * meant the script could be loaded from @v2.0.1 while every map asset came
+     * from a stale @main. */
+
+    var SELF_URL = (function () {
+        try {
+            var entries = performance.getEntriesByType('resource') || [];
+            for (var i = entries.length - 1; i >= 0; i--) {
+                var n = (entries[i] && entries[i].name) || '';
+                if (n.indexOf('map-float-window.js') >= 0 && n.indexOf('/mondstadt-3d-map') >= 0) return n;
+            }
+        } catch (e) { /* ignore */ }
+        return null;
+    })();
+
+    var SELF_BASE = (function () {
+        if (!SELF_URL) return null;
+        var clean = SELF_URL.split('#')[0].split('?')[0];
+        var idx = clean.indexOf('/scripts/map-float-window.js');
+        if (idx < 0) return null;
+        return clean.slice(0, idx + 1);
+    })();
+
     var CONFIG = {
         version: '2',
-        cdnBase: 'https://cdn.jsdelivr.net/gh/papa163165/mondstadt-3d-map@main/',
+        cdnBase: SELF_BASE || 'https://cdn.jsdelivr.net/gh/papa163165/mondstadt-3d-map@v2.0.1/',
         mapFile: 'index.html',
         easyQuery: 'embed=1',
         readyTimeoutMs: 70000,
