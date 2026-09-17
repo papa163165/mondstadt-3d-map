@@ -4,6 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>符拉迪沃斯托克 3D 地铁规划系统</title>
+    <script>
+        /*
+         * 修复「在 Blob 文档里 Cesium 起不了 Worker」——底图整片纯黑的根因。
+         *
+         * 本页由悬浮窗取回 HTML 后用 Blob URL 装载（CDN 把 .html 按 text/plain 下发，
+         * 直接给 iframe 指 URL 只会显示源码）。Blob 文档的 location.protocol 是 "blob:"、
+         * host 是空串，而 Cesium 1.116 的 TaskProcessor 用 isCrossOriginUrl(workerPath)
+         * 决定 worker 怎么起：它拿「location 的协议+主机」和「workerPath 解析出的协议+主机」
+         * 对比，在 Blob 文档里必然判定为跨域，于是走「跨域 classic worker」分支，生成
+         * importScripts("createGeometry") 这种没有路径的引导脚本 —— worker 直接
+         * SyntaxError 起不来，地球网格和建筑几何全都建不出来，画面只剩不依赖 Worker 的
+         * 标签和圆点，看起来就是「底图全黑」。
+         *
+         * Cesium 自己的正常同源分支用的是一份打包好的 worker 源码（全局 CESIUM_WORKERS）。
+         * 这里只在 Blob 构造处识别上面那种残缺引导脚本并换成同样的做法，其余 Blob 一律原样
+         * 放行，不依赖 Cesium 内部私有函数。
+         */
+        (function () {
+            if (window.__MDSK_WORKER_BLOB_FIX__) return;
+            window.__MDSK_WORKER_BLOB_FIX__ = true;
+            var NativeBlob = window.Blob;
+            if (!NativeBlob || !window.URL || !window.URL.createObjectURL) return;
+            var BOOTSTRAP = /^\s*importScripts\("([A-Za-z0-9_]+)(?:\.js)?"\);\s*$/;
+            var combinedWorkerUrl = null;
+            function getCombinedWorkerUrl() {
+                if (!combinedWorkerUrl) {
+                    combinedWorkerUrl = URL.createObjectURL(
+                        new NativeBlob([window.CESIUM_WORKERS], { type: 'application/javascript' }));
+                }
+                return combinedWorkerUrl;
+            }
+            function PatchedBlob(parts, options) {
+                try {
+                    if (parts && parts.length === 1 && typeof parts[0] === 'string' &&
+                        typeof window.CESIUM_WORKERS === 'string') {
+                        var m = BOOTSTRAP.exec(parts[0]);
+                        if (m) {
+                            parts = ['importScripts(' + JSON.stringify(getCombinedWorkerUrl()) + ');' +
+                                     'CesiumWorkers[' + JSON.stringify(m[1]) + ']();'];
+                        }
+                    }
+                } catch (e) { /* 任何异常都退回原生行为 */ }
+                return new NativeBlob(parts, options);
+            }
+            PatchedBlob.prototype = NativeBlob.prototype;
+            window.Blob = PatchedBlob;
+        })();
+    </script>
     <script src="cesium/Cesium.js"></script>
     <link href="cesium/Widgets/widgets.css" rel="stylesheet">
     <style>
