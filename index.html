@@ -52,78 +52,7 @@
             window.Blob = PatchedBlob;
         })();
     </script>
-    <script>
-        /*
-         * 修复「Blob 文档发不出 Referer，OSM 只好回 Access blocked 占位图」。
-         *
-         * 浏览器算 Referer 用的是文档自己的 URL，Blob 文档的 URL 是 blob:，不能当
-         * referrer 用，于是从本页发出的瓦片请求一个 Referer 都不带。OpenStreetMap 的
-         * 瓦片服务器按使用政策要求请求方带 Referer，缺了就返回「Access blocked」占位图
-         * —— 但 HTTP 状态码仍然是 200，只看状态码看不出问题，表现就是底图一整片都是
-         * 「Access blocked」而不是地图。
-         *
-         * 这里把「普通 http(s) 页面本来会发的那个 Referer」补回去（用本页源作为
-         * referrer，只补没显式指定的、目标是 http(s) 的请求；blob: / data: 一律不动）。
-         * 页面本身就是 http(s) 时不介入。
-         */
-        (function () {
-            if (window.__MDSK_REFERRER_FIX__) return;
-            window.__MDSK_REFERRER_FIX__ = true;
-            if (/^https?:$/.test(location.protocol)) return;
-            var nativeFetch = window.fetch;
-            if (!nativeFetch) return;
-            var selfOrigin = location.origin + '/';
-            window.fetch = function (input, init) {
-                try {
-                    var url = typeof input === 'string' ? input :
-                        (input && typeof input.url === 'string' ? input.url : null);
-                    if (url && /^https?:/i.test(url)) {
-                        var opts = {};
-                        if (init) { for (var k in init) opts[k] = init[k]; }
-                        if (opts.referrer === undefined) opts.referrer = selfOrigin;
-                        return nativeFetch.call(this, input, opts);
-                    }
-                } catch (e) { /* 任何异常都退回原生行为 */ }
-                return nativeFetch.call(this, input, init);
-            };
-        })();
-    </script>
     <script src="cesium/Cesium.js"></script>
-    <script>
-        /*
-         * 继续补 Referer：Cesium 拉瓦片走的是 XMLHttpRequest，而 Referer 是「禁止头」，
-         * 脚本没法用 setRequestHeader 自己加；能带 referrer 的只有 fetch 的 referrer 选项。
-         * 所以把 Cesium 的传输实现钩子 Resource._Implementations.loadWithXhr 在「要取 blob」
-         * 这一条路径上改走 fetch（其它响应类型原样交回 Cesium 自己的实现，不影响别的加载）。
-         */
-        (function () {
-            if (window.__MDSK_XHR_REFERRER_FIX__) return;
-            window.__MDSK_XHR_REFERRER_FIX__ = true;
-            if (/^https?:$/.test(location.protocol)) return;
-            if (typeof Cesium === 'undefined' || !Cesium.Resource || !Cesium.Resource._Implementations) return;
-            var nativeLoadWithXhr = Cesium.Resource._Implementations.loadWithXhr;
-            if (typeof nativeLoadWithXhr !== 'function') return;
-            Cesium.Resource._Implementations.loadWithXhr =
-                function (url, responseType, method, data, headers, deferred, overrideMimeType) {
-                    if (responseType !== 'blob' || typeof url !== 'string' || !/^https?:/i.test(url)) {
-                        return nativeLoadWithXhr.apply(this, arguments);
-                    }
-                    var aborter = null;
-                    try { aborter = new AbortController(); } catch (e) { aborter = null; }
-                    var init = { method: method || 'GET', headers: headers || {} };
-                    if (aborter) init.signal = aborter.signal;
-                    if (data !== undefined && data !== null) init.body = data;
-                    fetch(url, init).then(function (res) {
-                        if (res.status < 200 || res.status >= 300) {
-                            deferred.reject(new Error('HTTP ' + res.status + ' ' + url));
-                            return;
-                        }
-                        return res.blob().then(function (b) { deferred.resolve(b); });
-                    }).catch(function (err) { deferred.reject(err); });
-                    return aborter ? { abort: function () { aborter.abort(); } } : undefined;
-                };
-        })();
-    </script>
     <link href="cesium/Widgets/widgets.css" rel="stylesheet">
     <style>
         body {
@@ -449,8 +378,11 @@
         });
 
         // 添加免费 OpenStreetMap 底图（此版本 Cesium 的 baseLayer 参数有兼容问题，构造后手动添加）
+        // 用 tile.openstreetmap.de（德国 OSM 社区服务器）而非 tile.openstreetmap.org：
+        // 后者会拒绝不带 Referer 的请求，而本页由悬浮窗以 Blob 文档装载，发不出 Referer。
+        // .org 会回「Access blocked」占位图，.de 则正常出图，无需伪造 Referer，也无需 API key。
         viewer.imageryLayers.addImageryProvider(new Cesium.UrlTemplateImageryProvider({
-            url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            url: 'https://tile.openstreetmap.de/{z}/{x}/{y}.png',
             credit: '© OpenStreetMap contributors',
             maximumLevel: 19
         }));
